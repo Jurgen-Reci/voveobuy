@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>voveobuy.com</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f4f6fb;
+        color: #111827;
+      }
+
+      a {
+        text-decoration: none;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 56px;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #111827;
+      }
+
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #8b5cf6, #38bdf8);
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 12px 25px rgba(139, 92, 246, 0.28);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font-size: 0.95rem;
+      }
+
+      .nav a {
+        color: #374151;
+        font-weight: 600;
+      }
+
+      .login-btn {
+        padding: 10px 18px;
+        border-radius: 999px;
+        background: #111827;
+        color: white;
+        font-weight: 700;
+        transition: 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .login-btn:hover {
+        background: #1f2937;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        padding: 20px;
+      }
+
+      .modal.open {
+        display: flex;
+      }
+
+      .modal-card {
+        width: min(100%, 420px);
+        background: white;
+        border-radius: 22px;
+        padding: 24px 22px 18px;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.25);
+        position: relative;
+      }
+
+      .close-btn {
+        position: absolute;
+        right: 16px;
+        top: 14px;
+        background: #f3f4f6;
+        border: none;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
+
+      .modal-card h2 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+
+      .modal-card p {
+        margin: 0 0 22px;
+        color: #6b7280;
+      }
+
+      .modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .modal-form label {
+        font-size: 0.9rem;
+        color: #374151;
+        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .modal-form input {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid #d1d5db;
+        font-size: 1rem;
+      }
+
+      .modal-form input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12);
+      }
+
+      .modal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        color: #4b5563;
+      }
+
+      .modal-row label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-direction: row;
+        font-weight: 500;
+      }
+
+      .modal-row input {
+        width: auto;
+        margin: 0;
+      }
+
+      .modal-submit {
+        width: 100%;
+        padding: 15px 16px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #8b5cf6, #2563eb);
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 24px 64px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        align-items: center;
+        gap: 28px;
+        padding: 38px 0 24px;
+      }
+
+      .hero-copy h1 {
+        font-size: clamp(2.7rem, 5vw, 5rem);
+        line-height: 0.97;
+        letter-spacing: -0.06em;
+        margin: 0 0 18px;
+      }
+
+      .hero-copy p {
+        max-width: 620px;
+        font-size: 1.12rem;
+        line-height: 1.7;
+        color: #4b5563;
+        margin: 0 0 26px;
+      }
+
+      .cta-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .cta-primary,
+      .cta-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px 22px;
+        border-radius: 12px;
+        font-weight: 700;
+        border: 1px solid transparent;
+      }
+
+      .cta-primary {
+        background: linear-gradient(135deg, #8b5cf6, #2563eb);
+        color: white;
+        box-shadow: 0 18px 30px rgba(88, 77, 255, 0.2);
+      }
+
+      .cta-secondary {
+        background: #eef2ff;
+        color: #1f2937;
+        border-color: #dfe7ff;
+      }
+
+      .mini-stats {
+        display: flex;
+        gap: 24px;
+        margin-top: 26px;
+        flex-wrap: wrap;
+      }
+
+      .stat-box {
+        min-width: 120px;
+      }
+
+      .stat-box strong {
+        display: block;
+        font-size: 1.7rem;
+        margin-bottom: 4px;
+      }
+
+      .stat-box span {
+        color: #6b7280;
+      }
+
+      .hero-visual {
+        background: linear-gradient(135deg, #111827, #312e81);
+        border-radius: 28px;
+        min-height: 420px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 28px 60px rgba(17, 24, 39, 0.18);
+      }
+
+      .hero-visual::before,
+      .hero-visual::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .hero-visual::before {
+        width: 260px;
+        height: 260px;
+        top: -60px;
+        right: -40px;
+      }
+
+      .hero-visual::after {
+        width: 200px;
+        height: 200px;
+        bottom: -50px;
+        left: -30px;
+      }
+
+      .floating-card {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 18px;
+        color: white;
+        padding: 18px;
+      }
+
+      .float-one {
+        left: 24px;
+        top: 24px;
+        width: 170px;
+      }
+
+      .float-two {
+        right: 22px;
+        bottom: 22px;
+        width: 180px;
+      }
+
+      .floating-card .label {
+        display: block;
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin-bottom: 8px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .floating-card strong {
+        font-size: 2rem;
+      }
+
+      .product-showcase {
+        margin-top: 60px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 22px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.7rem);
+        letter-spacing: -0.04em;
+      }
+
+      .section-head a {
+        color: #4f46e5;
+        font-weight: 700;
+      }
+
+      .product-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(220px, 1fr));
+        gap: 22px;
+      }
+
+      .product-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      }
+
+      .product-image {
+        height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        color: white;
+        font-weight: 700;
+      }
+
+      .img-one { background: linear-gradient(135deg, #1d4ed8, #60a5fa); }
+      .img-two { background: linear-gradient(135deg, #a855f7, #ec4899); }
+      .img-three { background: linear-gradient(135deg, #f59e0b, #f97316); }
+      .img-four { background: linear-gradient(135deg, #10b981, #14b8a6); }
+
+      .product-info {
+        padding: 18px 16px 20px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4f46e5;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+
+      .product-info h3 {
+        margin: 0 0 8px;
+        font-size: 1.25rem;
+      }
+
+      .product-info p {
+        margin: 0 0 16px;
+        color: #6b7280;
+        line-height: 1.5;
+      }
+
+      .product-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .price {
+        font-size: 1.3rem;
+        font-weight: 800;
+      }
+
+      .buy-btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        background: #111827;
+        color: white;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .features {
+        margin-top: 66px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+        gap: 20px;
+      }
+
+      .feature-box {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 22px 18px;
+      }
+
+      .feature-box strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+      }
+
+      .feature-box span {
+        color: #6b7280;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 960px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+
+        .product-grid {
+          grid-template-columns: repeat(2, minmax(220px, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .topbar {
+          padding: 14px 18px;
+        }
+
+        .nav {
+          gap: 10px;
+          font-size: 0.8rem;
+        }
+
+        .brand {
+          font-size: 1.2rem;
+        }
+
+        .product-grid,
+        .features {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="modal" id="loginModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <button class="close-btn" type="button" aria-label="Close login modal">×</button>
+        <h2 id="loginTitle">Log in</h2>
+        <p>Welcome back to voveobuy.com</p>
+
+        <form class="modal-form" id="loginForm">
+          <label>
+            Email
+            <input type="email" placeholder="you@example.com" required />
+          </label>
+
+          <label>
+            Password
+            <input type="password" placeholder="Enter your password" required />
+          </label>
+
+          <div class="modal-row">
+            <label>
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+            <a href="#" style="color: #4f46e5; font-weight: 700;">Forgot?</a>
+          </div>
+
+          <button class="modal-submit" type="submit">Sign in</button>
+        </form>
+      </div>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <span>voveobuy.com</span>
+      </div>
+
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#">Home</a>
+        <a href="#">Deals</a>
+        <a href="#">Shop</a>
+        <button class="login-btn" id="openLoginBtn" type="button">Log in</button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>Shop the best products for everyday life.</h1>
+          <p>
+            Discover premium tech, essentials, and trending picks at voveobuy.com.
+            Fast delivery, trusted quality, and deals made for your routine.
+          </p>
+
+          <div class="cta-row">
+            <a class="cta-primary" href="#products">Shop now</a>
+            <a class="cta-secondary" href="#">Explore deals</a>
+          </div>
+
+          <div class="mini-stats">
+            <div class="stat-box">
+              <strong>2M+</strong>
+              <span>orders</span>
+            </div>
+            <div class="stat-box">
+              <strong>4.9/5</strong>
+              <span>reviews</span>
+            </div>
+            <div class="stat-box">
+              <strong>24h</strong>
+              <span>shipping</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Promotional storefront visual">
+          <div class="floating-card float-one">
+            <span class="label">Today’s deal</span>
+            <strong>$149</strong>
+          </div>
+
+          <div class="floating-card float-two">
+            <span class="label">Best seller</span>
+            <strong>4.9 ★</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="product-showcase" id="products">
+        <div class="section-head">
+          <h2>Popular picks</h2>
+          <a href="#">See all</a>
+        </div>
+
+        <div class="product-grid">
+          <article class="product-card">
+            <div class="product-image img-one">⌚</div>
+            <div class="product-info">
+              <span class="tag">Tech</span>
+              <h3>Smart Watch X</h3>
+              <p>Fitness tracking, notifications, and all-day battery.</p>
+              <div class="product-row">
+                <span class="price">$129</span>
+                <button class="buy-btn">Buy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-image img-two">🎧</div>
+            <div class="product-info">
+              <span class="tag">Audio</span>
+              <h3>Noise Pro</h3>
+              <p>Premium sound with deep bass and wireless comfort.</p>
+              <div class="product-row">
+                <span class="price">$89</span>
+                <button class="buy-btn">Buy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-image img-three">👟</div>
+            <div class="product-info">
+              <span class="tag">Style</span>
+              <h3>Aero Runner</h3>
+              <p>Lightweight performance design for everyday movement.</p>
+              <div class="product-row">
+                <span class="price">$74</span>
+                <button class="buy-btn">Buy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-image img-four">💼</div>
+            <div class="product-info">
+              <span class="tag">Travel</span>
+              <h3>Metro Pack</h3>
+              <p>Smart storage, minimal profile, and durable everyday carry.</p>
+              <div class="product-row">
+                <span class="price">$59</span>
+                <button class="buy-btn">Buy</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="features">
+        <div class="feature-box">
+          <strong>Free shipping</strong>
+          <span>Fast delivery on every order over $35.</span>
+        </div>
+
+        <div class="feature-box">
+          <strong>Easy returns</strong>
+          <span>Simple 30-day returns in case it isn’t the right fit.</span>
+        </div>
+
+        <div class="feature-box">
+          <strong>Member perks</strong>
+          <span>Unlock exclusive discounts and early access to drops.</span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const modal = document.getElementById('loginModal');
+      const openBtn = document.getElementById('openLoginBtn');
+      const closeBtn = document.querySelector('.close-btn');
+      const loginForm = document.getElementById('loginForm');
+
+      function openModal() {
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+          closeModal();
+        }
+      });
+
+      loginForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        alert('Logged in successfully (mock demo)');
+        closeModal();
+      });
+    </script>
+  </body>
+</html>
