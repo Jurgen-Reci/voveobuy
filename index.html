@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-   <meta name="google-site-verification" content="iViUmKrBiBUO8tjtNJwjoS1LZosx0szoh53lhborifA" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="google-site-verification"
+      content="iViUmKrBiBUO8tjtNJwjoS1LZosx0szoh53lhborifA"
+    />
     <title>voveobuy.com</title>
     <style>
       * {
@@ -83,15 +86,21 @@
         background: #1f2937;
       }
 
+      .login-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
       .modal {
         position: fixed;
         inset: 0;
         background: rgba(17, 24, 39, 0.55);
         display: none;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         z-index: 50;
         padding: 20px;
+        overflow-y: auto;
       }
 
       .modal.open {
@@ -105,6 +114,9 @@
         padding: 24px 22px 18px;
         box-shadow: 0 28px 80px rgba(15, 23, 42, 0.25);
         position: relative;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        margin: auto 0;
       }
 
       .close-btn {
@@ -190,6 +202,75 @@
         font-size: 1rem;
         font-weight: 700;
         cursor: pointer;
+      }
+
+      .login-status {
+        min-height: 20px;
+        margin-top: 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        display: none;
+      }
+
+      .login-status.error {
+        color: #b91c1c;
+        display: block;
+      }
+
+      .login-status.success {
+        color: #166534;
+        display: block;
+      }
+
+      .auth-mode-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        padding: 6px;
+        margin-bottom: 18px;
+      }
+
+      .auth-mode-btn {
+        border: none;
+        background: transparent;
+        color: #4b5563;
+        font-weight: 700;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      .auth-mode-btn.active {
+        background: white;
+        color: #111827;
+        box-shadow: 0 2px 8px rgba(17, 24, 39, 0.08);
+      }
+
+      .captcha-container {
+        display: flex;
+        justify-content: center;
+        min-height: 65px;
+      }
+
+      .verification-help {
+        color: #6b7280;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .member-pill {
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-weight: 700;
+        border: 1px solid #c7d2fe;
       }
 
       .container {
@@ -500,15 +581,24 @@
         <h2 id="loginTitle">Log in</h2>
         <p>Welcome back to voveobuy.com</p>
 
+        <div class="auth-mode-toggle" aria-label="Authentication mode selector">
+          <button class="auth-mode-btn active" type="button" data-mode="login">Sign in</button>
+          <button class="auth-mode-btn" type="button" data-mode="signup">Create account</button>
+        </div>
+
+        <div class="captcha-container" id="captchaContainer">
+          <div id="turnstileWidget"></div>
+        </div>
+
         <form class="modal-form" id="loginForm">
           <label>
             Email
-            <input type="email" placeholder="you@example.com" required />
+            <input id="loginEmail" type="email" placeholder="you@example.com" required />
           </label>
 
           <label>
             Password
-            <input type="password" placeholder="Enter your password" required />
+            <input id="loginPassword" type="password" placeholder="Enter your password" required />
           </label>
 
           <div class="modal-row">
@@ -516,11 +606,36 @@
               <input type="checkbox" />
               <span>Remember me</span>
             </label>
-            <a href="#" style="color: #4f46e5; font-weight: 700;">Forgot?</a>
+            <button id="forgotPasswordBtn" type="button" style="padding:0; border:0; background:none; color:#4f46e5; font-weight:700; cursor:pointer;">Forgot?</button>
           </div>
 
           <button class="modal-submit" type="submit">Sign in</button>
+          <button id="resendConfirmationBtn" type="button" style="padding:10px; border:0; background:transparent; color:#4f46e5; font-weight:700; cursor:pointer;">Resend confirmation email</button>
         </form>
+
+        <form class="modal-form hidden" id="signupForm">
+          <label>
+            Full name
+            <input id="signupName" type="text" placeholder="Your full name" required />
+          </label>
+
+          <label>
+            Email
+            <input id="signupEmail" type="email" placeholder="you@example.com" required />
+          </label>
+
+          <label>
+            Password
+            <input id="signupPassword" type="password" placeholder="Create a password" required />
+          </label>
+
+          <button class="modal-submit" type="submit">Create account</button>
+        </form>
+
+        <div class="modal-form hidden" id="confirmationPanel">
+          <p class="verification-help" id="confirmationHelp"></p>
+        </div>
+        <div id="loginStatus" class="login-status" aria-live="polite"></div>
       </div>
     </div>
 
@@ -660,15 +775,85 @@
       </section>
     </main>
 
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
     <script>
+      const SUPABASE_URL = 'https://tryjgegmshduucrhkmtk.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_jP8SGrGh5Hex8u49EuyBow_crYQU7Q6';
+      const TURNSTILE_SITE_KEY = '0x4AAAAAAF5Dc_kvnisoUruF';
+      const isConfigured = !SUPABASE_URL.includes('YOUR-PROJECT') &&
+        !SUPABASE_ANON_KEY.includes('YOUR-SUPABASE') &&
+        !TURNSTILE_SITE_KEY.includes('YOUR-CLOUDFLARE');
+
+      try {
+        localStorage.removeItem('voveobuyUsers');
+        localStorage.removeItem('voveobuySession');
+      } catch (error) {
+        // Storage can be unavailable in private browsing contexts.
+      }
+
+      let authClient;
+      let captchaWidgetId;
+      let captchaToken = '';
+      let verificationEmail = '';
+
       const modal = document.getElementById('loginModal');
       const openBtn = document.getElementById('openLoginBtn');
       const closeBtn = document.querySelector('.close-btn');
       const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const confirmationPanel = document.getElementById('confirmationPanel');
+      const loginStatus = document.getElementById('loginStatus');
+      const authModeButtons = document.querySelectorAll('.auth-mode-btn');
+      const captchaContainer = document.getElementById('captchaContainer');
+      const confirmationHelp = document.getElementById('confirmationHelp');
+
+      function setLoginStatus(message, type = '') {
+        loginStatus.textContent = message;
+        loginStatus.className = `login-status ${type}`;
+      }
+
+      function clearCaptcha() {
+        captchaToken = '';
+        if (window.turnstile && captchaWidgetId !== undefined) {
+          window.turnstile.reset(captchaWidgetId);
+        }
+      }
+
+      function renderCaptcha() {
+        if (!isConfigured || !window.turnstile || captchaWidgetId !== undefined) return;
+
+        captchaWidgetId = window.turnstile.render('#turnstileWidget', {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token) => { captchaToken = token; },
+          'expired-callback': () => { captchaToken = ''; },
+          'error-callback': () => { captchaToken = ''; }
+        });
+      }
+
+      window.onTurnstileLoaded = renderCaptcha;
+
+      function setAuthMode(mode) {
+        loginForm.classList.toggle('hidden', mode !== 'login');
+        signupForm.classList.toggle('hidden', mode !== 'signup');
+        confirmationPanel.classList.add('hidden');
+        captchaContainer.classList.remove('hidden');
+        authModeButtons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.mode === mode);
+        });
+        setLoginStatus('', '');
+        clearCaptcha();
+      }
 
       function openModal() {
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
+        renderCaptcha();
+        if (!isConfigured) {
+          setLoginStatus('Supabase is configured. Add the Turnstile site key here and its secret in Supabase CAPTCHA settings.', 'error');
+        } else {
+          setLoginStatus('', '');
+        }
       }
 
       function closeModal() {
@@ -676,26 +861,168 @@
         modal.setAttribute('aria-hidden', 'true');
       }
 
-      openBtn.addEventListener('click', openModal);
+      function requireConfiguration() {
+        if (!isConfigured || !authClient) {
+          setLoginStatus('Supabase is configured. Add the Turnstile site key here and its secret in Supabase CAPTCHA settings.', 'error');
+          return false;
+        }
+
+        if (!captchaToken) {
+          setLoginStatus('Complete the CAPTCHA check first.', 'error');
+          return false;
+        }
+
+        return true;
+      }
+
+      function updateAuthButton(session) {
+        if (session) {
+          openBtn.textContent = 'Log out';
+          openBtn.setAttribute('aria-label', `Log out ${session.user.email}`);
+        } else {
+          openBtn.textContent = 'Log in';
+          openBtn.removeAttribute('aria-label');
+        }
+      }
+
+      openBtn.addEventListener('click', async () => {
+        if (authClient) {
+          const { data: { session } } = await authClient.auth.getSession();
+          if (session) {
+            const { error } = await authClient.auth.signOut();
+            if (error) setLoginStatus(error.message, 'error');
+            return;
+          }
+        }
+
+        openModal();
+      });
+
       closeBtn.addEventListener('click', closeModal);
-
-      modal.addEventListener('click', function (event) {
-        if (event.target === modal) {
-          closeModal();
-        }
+      authModeButtons.forEach((button) => {
+        button.addEventListener('click', () => setAuthMode(button.dataset.mode));
       });
 
-      document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && modal.classList.contains('open')) {
-          closeModal();
-        }
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
       });
 
-      loginForm.addEventListener('submit', function (event) {
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+      });
+
+      loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        alert('Logged in successfully (mock demo)');
+        if (!requireConfiguration()) return;
+
+        const { data, error } = await authClient.auth.signInWithPassword({
+          email: document.getElementById('loginEmail').value.trim(),
+          password: document.getElementById('loginPassword').value,
+          options: { captchaToken }
+        });
+
+        clearCaptcha();
+        if (error) {
+          setLoginStatus(error.message, 'error');
+          return;
+        }
+
+        updateAuthButton(data.session);
         closeModal();
       });
+
+      signupForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!requireConfiguration()) return;
+
+        const email = document.getElementById('signupEmail').value.trim();
+        const { data, error } = await authClient.auth.signUp({
+          email,
+          password: document.getElementById('signupPassword').value,
+          options: {
+            data: { full_name: document.getElementById('signupName').value.trim() },
+            emailRedirectTo: `${window.location.origin}${window.location.pathname}`,
+            captchaToken
+          }
+        });
+
+        clearCaptcha();
+        if (error) {
+          setLoginStatus(error.message, 'error');
+          return;
+        }
+
+        if (data.session) {
+          updateAuthButton(data.session);
+          closeModal();
+          return;
+        }
+
+        confirmationHelp.textContent = `Supabase sent a confirmation link to ${email}. Open that email link to verify your address, then return here.`;
+        loginForm.classList.add('hidden');
+        signupForm.classList.add('hidden');
+        confirmationPanel.classList.remove('hidden');
+        captchaContainer.classList.add('hidden');
+        authModeButtons.forEach((button) => button.classList.remove('active'));
+        setLoginStatus('Check your email for the confirmation link.', 'success');
+      });
+
+      document.getElementById('resendConfirmationBtn').addEventListener('click', async () => {
+        if (!requireConfiguration()) return;
+
+        const email = document.getElementById('loginEmail').value.trim();
+        if (!email) {
+          setLoginStatus('Enter your signup email first.', 'error');
+          return;
+        }
+
+        const { error } = await authClient.auth.resend({
+          type: 'signup',
+          email,
+          options: { captchaToken }
+        });
+        clearCaptcha();
+        setLoginStatus(error ? error.message : 'If that account needs confirmation, a new link has been sent.', error ? 'error' : 'success');
+      });
+
+      document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+        if (!requireConfiguration()) return;
+
+        const email = document.getElementById('loginEmail').value.trim();
+        if (!email) {
+          setLoginStatus('Enter your email first, then choose Forgot?', 'error');
+          return;
+        }
+
+        const { error } = await authClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin
+        });
+        clearCaptcha();
+        setLoginStatus(error ? error.message : 'If that account exists, a reset email is on its way.', error ? 'error' : 'success');
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const authError = new URLSearchParams(window.location.hash.slice(1));
+        const expiredConfirmation = authError.get('error_code') === 'otp_expired';
+
+        if (expiredConfirmation) {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+        }
+
+        if (isConfigured && window.supabase) {
+          authClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          authClient.auth.getSession().then(({ data }) => updateAuthButton(data.session));
+          authClient.auth.onAuthStateChange((_event, session) => updateAuthButton(session));
+          renderCaptcha();
+        }
+
+        if (expiredConfirmation) {
+          openModal();
+          setLoginStatus('That confirmation link expired or was already used. Enter your signup email, complete CAPTCHA, then choose Resend confirmation email.', 'error');
+        }
+      });
+
+      setAuthMode('login');
     </script>
   </body>
 </html>
